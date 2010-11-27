@@ -154,5 +154,15 @@ translate? callcallback?
 transport layer. writes to a reads from a temp file, or tcp?
 
 
+so the important thing about the transport layer, is that i need to create
+each end of it in a seperate process. i.e. 
+it should create some sort of descriptor, 
+which contains all the information needed to setup the other end
+
+Reciever.setup (parameters)
+inst = Reciever.instructions
+
+okay, I can't  imagine this well enough, so i'll have to make some demos.
+
 */
 
