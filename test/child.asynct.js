@@ -1,275 +1,132 @@
+var child = require('child/child')
+  , inspect = require('inspect')
+  , describe = require('should').describe
+
 /*
-this is passing, although it feels quite complicated.
 
-the format to serialize the callbacks should be taken out,
-also, the messaging format should be passed though, so it's pluggable.
-
-
+now that this is rewritten I feel much more confidant.
 
 */
 
-if (module == require.main) {
-  return require('async_testing').run(process.ARGV);
-}
+exports ['can load an run an arbitary function'] = function (test){
 
-var child = require('child')
-  , inspect = require('inspect')
-  , should = require('should')
-
-exports ['can run a simple test'] = function(test){
-
-  child.runFile('meta-test/test/examples/asynct/test-all_passing',{onSuiteDone: suiteDone})
-
-  function suiteDone(status,report){
-    test.equal(status,'complete')
+  var rand = Math.random()
+  child.run(
+    { require: 'child/test/lib/callback'
+    , function: 'returnArg'
+    , args: [rand]
+    , onReturn: returned } )
+  //run(require,function,[args],return)
+  function returned (r){
+    var it = 
+      describe(r,'returned value from require(\'child/test/example/callback\').returnArg(' + rand + ')')
+    it.should.eql(rand)
     test.finish()
   }
 }
 
-exports ['can make callbacks into message and back'] = function(test){
-
-  var message = 'asdfhasdflsdlf'
-  var masterCallbacks = {
-    send: function(m){
-      test.equal(m,message)
-      test.finish()
-    }
-  }
-
-  var mm = child.makeMessage(masterCallbacks)
-  
-  cb = child.makeCallbacks(mm,recieve)
- 
-  cb.send(message)
-  function recieve(message){
-    child.parseMessage(message,masterCallbacks)
-  }
-}
-
-var example1 = {}
-  example1.callbacks = 
-    { send1: function(m){
-//        test.equal(m,message.shift())
-      }
-    , send2: function(m){
-  /*      test.equal(m,message.shift())
-        test.finish()    */
-      }
-    , obj: {send3:
-        function (m){/*
-          test.equal(m,message.shift())
-          test.equal(message.length,0)
-          test.finish()*/    
-      } }
-  }
-
-  example1.expected  = {
-      send1:{ '[Function]': ["send1"] } 
-    , send2:{ '[Function]': ["send2"] } 
-    , obj:  { send3: {  '[Function]': ["obj", "send3"]  } }
-    }
-
-exports ['can make callbacks into message'] = function(test){
-
-  var mm = child.makeMessage(example1.callbacks)
-  console.log("MESSAGES", inspect(mm))
-
-
-  test.deepEqual(mm,example1.expected, 
-      "expected: \n" + inspect(example1.expected)
-    + "\n but got: \n" + inspect(mm))
-
-test.finish()
-}
-
-exports ['makeMessage perserve collection type'] = function (test){
-  var mm1 = child.makeMessage([])
-  mm1.should.be.instanceof(Array)
-  var mm2 = child.makeMessage({})
-
-  mm2.should.not.be.instanceof(Array)
-  mm2.should.be.instanceof(Object)
-
-  test.finish()
-}
-
-exports ['makeCallbacks perserve collection type'] = function (test){
-  var mm1 = child.makeCallbacks([])
-  mm1.should.be.instanceof(Array)
-  var mm2 = child.makeCallbacks({})
-
-  mm2.should.not.be.instanceof(Array)
-  mm2.should.be.instanceof(Object)
-
-  test.finish()
-}
-
-
-exports ['can make message into callbacks'] = function (test){
-
-  cb = child.makeCallbacks(example1.expected,sender)
-  console.log("CALLBACKS")
-  console.log(inspect(cb))
-  
-  test.equal(typeof cb.send1, 'function')
-  test.equal(typeof cb.send2, 'function')
-  test.equal(typeof cb.obj.send3, 'function')
-  
-  var funcs = 
-    [ [ 'send1' ]
-    , [ 'send2' ]
-    , [ 'obj','send3' ] ]
-  var messages = ['hello','message2','js']
-  
-  function sender(args){
-    test.deepEqual(funcs.shift(),args[0])
-    test.deepEqual([messages.shift()],args[1])
-  }
-  cb.send1("hello")
-  cb.send2("message2")
-  cb.obj.send3("js")
-
-  test.finish()
-}
-
 /*
-  testing too much here, it's a head fuck.
-
-
+  throw an error
+  call call backs
 */
-exports ['parseMessage can call nested callbacks'] = function (test){
 
-  obj = {test: test}  
-  child.parseMessage([['ok'],[true]],test)
-  child.parseMessage([['test','finish'],[]],obj)
-}
+exports ['calls onError if there is an error'] = function (test){
 
+  var rand = Math.random()
+  child.run(
+    { require: 'child/test/lib/syntax_error'
+    , function: 'returnArg'
+    , args: [rand]
+    , onError: error } )
 
-exports ['can make callbacks into message and back, at any depth'] = function(test){
-
-
-  var message = ['asdfhasdflsdlf' ,'sdfghuvnrowef' , 'dfjkmlknmlfgmb']
-    , sending = [].concat(message)
-  var masterCallbacks = 
-    { send1: function(m){
-        test.equal(m,message.shift())
-      }
-    , send2: function(m){
-        test.equal(m,message.shift())
-      }
-    , obj: {send3:
-        function (m){
-          test.equal(m,message.shift())
-          test.equal(message.length,0)
-          test.finish()    
-      } }
-  }
-
-  mm = child.makeMessage(masterCallbacks)
-  console.log("MESSAGES", inspect(mm))
-  
-  cb = child.makeCallbacks(mm,recieve)
-
-  console.log("CALLBACKS", inspect(cb))
-
-  test.equal(typeof cb.send1,'function')
-  test.equal(typeof cb.send2,'function')
-  test.equal(typeof cb.obj.send3,'function')
-
-  cb.send1(sending[0])
-  cb.send2(sending[1])
-  cb.obj.send3(sending[2])
-  function recieve(message){
-    console.log('recieve message:' + inspect(message))
-    child.parseMessage(message,masterCallbacks)
+  function error (r){
+    var it = 
+      describe(r,"syntax error in required module in child process")
+    it.should.include.string('SyntaxError')
+    test.finish()
   }
 }
 
+exports ['calls callbacks'] = function (test){
 
-exports ['accepts test adapter'] = function (test){
   var calls = ['onTestStart','onTestDone','onSuiteDone','onExit']
-  var callbacks = { adapter: "child/test/lib/dummy_test_adapter" }
+  var callbacks = {}
   
   calls.forEach(each)
   
   function each(fName){
     callbacks[fName] = function (status,data){
       thisCall = calls.shift()
-      console.log("dummy test adapter called: " + thisCall + " expected:" + fName)
       test.equal(thisCall,fName)
       test.equal(status,fName)
       test.deepEqual(data , {test: "dummy_test_adapter: " + fName, object: {magicNumber: 123471947194 } } )
       
-      if (calls.length == 0) {
-        test.finish()
-      }
     }
   }
 
-  child.runFile("child/test/lib/magic_number" ,callbacks)
-}
-
-exports ['calls onSuiteDone(\'loadError\') if child did not exit properly.'
-            + ' example: syntax error'] = function (test) {
-            
-  var callbacks = 
-      { adapter: "child/test/lib/dummy_test_adapter" 
-      , onSuiteDone: done }
-      
-  function done(loadError,data){
-    test.equal(loadError,'loadError')
+  child.run(
+    { require: "child/test/lib/dummy_test_adapter"
+    , function: 'runTest'
+    , args: ["child/test/lib/magic_number" ,callbacks]
+    , onError:error 
+    , onExit: exit} )
+    
+  function error(error){
+    console.log("error! >>>" + error + "<<<")
+    test.ok(false,"did not expect an error! >" + error + "<")
+  }
+  
+  function exit(){
+    test.equal(calls.length,0)
     test.finish()
   }
-
-  child.runFile("child/test/lib/test-error_syntax" ,callbacks)
-}
-
-exports ['calls onSuiteDone(\'loadError\') does not confuse stderr with real loadError.'] = function (test) {
-
-  var callbacks = 
-      { adapter: "child/test/lib/dummy_test_adapter" 
-      , onSuiteDone: done }
-      
-  function done(onSuiteDone,data){
-    test.equal(onSuiteDone,'onSuiteDone')
-    process.nextTick(test.finish)
-  }
-
-  child.runFile("child/test/lib/stderr" ,callbacks)
-}
-
-exports ['calls onSuiteDone(\'loadError\') does not confuse stderr with real loadError.2'] = function (test) {
-
-  var callbacks = 
-      { adapter: "child/test/lib/dummy_test_adapter" 
-      , onSuiteDone: done }
-      
-  function done(onSuiteDone,data){
-    test.equal(onSuiteDone,'onSuiteDone')
-    process.nextTick(test.finish)
-  }
-
-  child.runFile("child/test/lib/stderr" ,callbacks)
 }
 /*
+  I did all this stuff with child processes
+  because i needed to remap require within tests running in another child process.
+
 */
 
+function timeout(test,time){
+    return setTimeout(function(){
+      console.log("TIMEOUT!")
+        test.ok(false,"expected test to finish within " + time + ' milliseconds\n'
+          + 'child process did not stop properly')
+      },time)
 
-exports ['can load an run an arbitary function'] = function (test){
+ /* test.finish = function(){
+    clearTimeout(timer)
+    _finish.call(test) // call finish on test.
+  }*/
+}
 
+
+exports ['stops normally after a delayed error'] = function (test){
   var rand = Math.random()
+    , theError = null
+    , timer = timeout(test,2000)
+
   child.run(
-    { require: 'child/test/example/callback'
-    , function: 'returnArg'
+    { require: 'child/test/lib/delayed-error'
+    , function: 'delayedError'
     , args: [rand]
-    , onReturn: returned } )
-  //run(require,function,[args],return)
-  function returned (r){
-    test.equal(r,rand)
+    , onError: error
+    , onExit: exit } )
+
+  function error (err){
+    theError = err
+    console.log(err)
+  }
+
+  function exit (r){
+    clearTimeout(timer)
+    console.log("EXIT!")
+
+    describe("" + theError,"the error thrown by \'child/test/lib/delayed-error\'")
+      .should.include.string("INTENSIONAL ERROR")
+
     test.finish()
   }
 }
 
-
 /**/
-

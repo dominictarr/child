@@ -1,24 +1,90 @@
 //transport
-
-
+var net = require('net')
+  , log = console.log
+  , curry = require('curry')
 exports.Reciever = Reciever
-function Reciever (desc){
+function Reciever (desc,ready){
   var self = this
-  self.descriptor = self
-  self.recieve = function (message){
-    console.log("recieved message:" + message)
-  }
-}
+  self.descriptor = desc ||
+    { format: 'child/transport'
+    , encoding: 'utf-8'
+    , port: Math.round(1000 + Math.random() * 40000 ) }
 
+  var server = net.Server(
+    function (s) { 
+      s.setEncoding(self.descriptor.encoding)
+      s.on('data',
+        function(d){
+          d.split('\n').forEach(function (e){
+            if(e){
+              var parsed = JSON.parse(e)
+              self.recieve(parsed)
+              } } ) } ) 
+      s.on('end',function(){
+        s.end()
+        } ) } )
+  server.listen(self.descriptor.port,ready)
+  
+  self.recieve = function (message){
+    log("recieved message:" + message)
+  }
+
+  self.stop = //curry(server.close,server)
+    function (){
+      server.close()
+    }
+}
 
 exports.Sender = Sender
 function Sender (desc){
   var self = this
   self.descriptor = desc
+  var connection = null
+  var tries = 0
+  var queue = []  
+  
+  function connect (){
+    if(connection)
+      return
+    try{
+    connection  = net.createConnection(self.descriptor.port)
+    connection.setEncoding(self.descriptor.encoding)
+
+    } catch (err){
+      tries ++ 
+      if(tried > 10)
+        throw err
+      process.nextTick(connect)
+    }
+  }
+//  self.stop = disconnect
+  function disconnect (){
+
+    if(connection){
+      connection.end()
+      connection = null
+    }
+  }
+
+  var waiting = false
+
+  function send (){
+
+    if(!connection){
+      process.nextTick(send)
+      return process.nextTick(connect)
+    }
+    while(queue.length > 0) {
+      var message = queue.shift()
+      connection.write(JSON.stringify(message) + '\n',self.descriptor.encoding)
+    }
+    setTimeout(disconnect,200)
+  }
+
   self.send = function (message){
-    process.nextTick(function (){
-      self.descriptor.recieve(message)
-    })
+    queue.push(message)
+    
+    process.nextTick(send)
   }
 }
 
