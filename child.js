@@ -20,6 +20,7 @@ if (module == require.main) {
   process.ARGV.shift()//__filename
   json = process.ARGV.shift()
 
+//  log(json)
 
   var xmitSender = new xmit.Sender()
   var payload = xmitSender.parse(json)
@@ -109,6 +110,8 @@ function run (options){
     , onReturn: options.onReturn
     , transport: xportR.descriptor  }
 
+  console.log("About to start child")
+  console.log(payload)
   /*SETUP TRANPORT*/
   
   xmitR = new xmit.Reciever()
@@ -177,4 +180,5 @@ function run (options){
     }
   }
 }
+
 

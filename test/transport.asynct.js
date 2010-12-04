@@ -1,6 +1,8 @@
 //transport.asynct.js
 
 /*
+  TEST FOR REALLY BIG MESSAGES. (that will get chunked!)
+
 
   okay, I have two modules which pass this test.
 

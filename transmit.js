@@ -53,7 +53,7 @@ function Reciever (){
     }
   }
   self.recieve = function (id,args){
-    assert.ok(registry[id],'registry did not have id=' + id)
+    assert.ok(registry[id],'registry did not have id=' + id + ", it had:" + Object.keys(registry).join())
     
     registry[id].apply(null,args)
   }
@@ -83,6 +83,7 @@ function Sender (){
   }
   
   self.reviver = function (key,value){
+    if(value)
     if(value['[Function]']){
       return self.registered(value['[Function]'])
     }  

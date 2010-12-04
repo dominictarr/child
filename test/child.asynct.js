@@ -1,10 +1,11 @@
-var child = require('child/child')
+var child = require('child')
   , inspect = require('inspect')
   , describe = require('should').describe
 
+
 /*
 
-now that this is rewritten I feel much more confidant.
+ADD new Test for multiple childs simultainously open.
 
 */
 
@@ -88,16 +89,11 @@ exports ['calls callbacks'] = function (test){
 */
 
 function timeout(test,time){
-    return setTimeout(function(){
-      console.log("TIMEOUT!")
-        test.ok(false,"expected test to finish within " + time + ' milliseconds\n'
-          + 'child process did not stop properly')
-      },time)
-
- /* test.finish = function(){
-    clearTimeout(timer)
-    _finish.call(test) // call finish on test.
-  }*/
+  return setTimeout(function(){
+    console.log("TIMEOUT!")
+      test.ok(false,"expected test to finish within " + time + ' milliseconds\n'
+        + 'child process did not stop properly')
+    },time)
 }
 
 
