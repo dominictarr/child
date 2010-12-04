@@ -3,7 +3,6 @@ var Reciever = require('child/transmit').Reciever
   , Sender = require('child/transmit').Sender
   , should = require('should')
 
-
 exports ['Reciever can register a function'] = function(test){
 
   function x(){}
