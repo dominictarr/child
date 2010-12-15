@@ -45,6 +45,10 @@ function Reciever (desc,ready){
         var parsed = JSON.parse(e.toString('utf-8'))
         self.recieve(parsed)
         } } }
+        
+  self.stop = function (){
+    socket.close()
+  }
 
   self.recieve = function (message){
     log("recieved message:" + message)
@@ -68,8 +72,8 @@ function Sender (desc){
         return
       
       sending = [queue.shift()]
-      if(sending == '')
-        return
+//      if(sending === '')
+  //      return
       var message = sending.map(function(c){return JSON.stringify(c)}).join('\n')
       var b = new Buffer("" + message)
 

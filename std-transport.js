@@ -2,13 +2,12 @@
 var net = require('net')
   , log = console.log
   , curry = require('curry')
+    
 exports.Reciever = Reciever
 function Reciever (desc,ready){
   var self = this
   self.descriptor = desc ||
-    { format: 'child/transport'
-    , encoding: 'utf-8'
-    , port: Math.round(1000 + Math.random() * 40000 ) }
+    { format: 'child/std-transport' }
 
   var server = net.Server(
     function (s) { 
@@ -27,11 +26,7 @@ function Reciever (desc,ready){
       s.on('end',function(){
         s.end()
         } ) } )
-
   server.listen(self.descriptor.port,ready)
-  server.on('error',function (error){
-    throw error //~do something useful!
-  })
   
   self.recieve = function (message){
     log("recieved message:" + message)

@@ -8,6 +8,7 @@
 
 var xmit = require('./transmit')
   , xport = require('./transport')
+//  , xport = require('./dgram-transport')
   , style = require('style')
   , log = console.log
 
@@ -91,6 +92,7 @@ function run (options){
      if(/SOFTEXIT$/.exec(errorBuffer.trim())){
       log("ignoring stderr. >" + errorBuffer.trim() + "<")
      } else {
+      log("HARD EXIT. >" + errorBuffer.trim() + "<")
       options.onError && options.onError(errorBuffer.trim());
      }
     }

@@ -46,6 +46,22 @@ exports ['calls onError if there is an error'] = function (test){
     test.finish()
   }
 }
+exports ['calls onError if there is an error, async'] = function (test){
+
+  var rand = Math.random()
+  child.run(
+    { require: 'child/test/lib/delayed-syntax-error'
+    , function: 'delayedError'
+    , args: [rand]
+    , onError: error } )
+
+  function error (r){
+    var it = 
+      describe(r,"syntax error in required module in child process")
+    it.should.include.string('SyntaxError')
+    test.finish()
+  }
+}
 
 exports ['calls callbacks'] = function (test){
 

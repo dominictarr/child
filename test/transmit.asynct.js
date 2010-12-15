@@ -1,14 +1,16 @@
 
 var Reciever = require('child/transmit').Reciever
   , Sender = require('child/transmit').Sender
+  , describe = require('should').describe
   , should = require('should')
+  , describe = should.describe
 
 exports ['Reciever can register a function'] = function(test){
 
   function x(){}
   r = new Reciever()
   id = r.register(x)
-  should.ok(id)
+  describe(id,'ID of registered function').should.ok
   id.should.be.a('number')
   id.should.eql(r.register(x)) //same function can't be registered twice
 
@@ -109,7 +111,7 @@ exports ['Sender provide JSON reviver function'] = function (test){
 }
 
 exports ['can connect sender to reciever with json'] = function (test){
-  var args = [23,324,5,435345]
+  var args = [23,324,5,null,{obj:null},435345]
     , r = new Reciever()
     , s = new Sender()
     s.send = r.recieve
@@ -123,7 +125,7 @@ exports ['can connect sender to reciever with json'] = function (test){
 }
 
 exports ['provide convienient API'] = function (test){
-  var args = [23,435,'sdafah',324,5,435345]
+  var args = [23,324,5,null,{obj:null},435345]
     , r = new Reciever()
     , s = new Sender()
     s.send = r.recieve
@@ -134,6 +136,20 @@ exports ['provide convienient API'] = function (test){
   _x = s.parse(r.stringify(x))
   _x(args)
 }
+
+exports ['provide convienient API'] = function (test){
+  var args = null
+    , r = new Reciever()
+    , s = new Sender()
+    s.send = r.recieve
+  function x(a){
+    describe(a,'returned args').should.eql(args)
+    test.finish()
+  }
+  _x = s.parse(r.stringify(x))
+  _x(args)
+}
+
 
 /*
 OKAY, this is way better!

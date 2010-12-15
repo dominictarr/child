@@ -83,6 +83,7 @@ function Sender (){
   }
   
   self.reviver = function (key,value){
+    if(value != null)
     if(value['[Function]']){
       return self.registered(value['[Function]'])
     }  
