@@ -253,7 +253,7 @@ exports ['calls onSuiteDone(\'loadError\') does not confuse stderr with real loa
 /*
 */
 
-
+/*
 exports ['can load an run an arbitary function'] = function (test){
 
   var rand = Math.random()
@@ -268,6 +268,7 @@ exports ['can load an run an arbitary function'] = function (test){
     test.finish()
   }
 }
+*/
 
 
 /**/

@@ -86,7 +86,7 @@ function run (options){
             { args: options.args || [] 
             , onReturn: options.onReturn
             , onExit : options.onExit 
-            , here: 'asdfhlasdf?'} ) } ) ] )
+              } ) } ) ] )
 
   var buffer = ''
     , messager = messages.useMagicNumbers(magic.start,magic.end)
@@ -120,10 +120,11 @@ function run (options){
 */
   child.stderr.on('close', function() {
     process.nextTick(function (){
-      if (errorBuffer && options.args[1].onSuiteDone && !normalExit) {
+    
+      if (errorBuffer && options.onError && !normalExit) {
         console.log("LOAD ERROR LOAD ERROR LOAD ERROR")
         console.log(errorBuffer.trim())
-        options.args[1].onSuiteDone('loadError', {error: errorBuffer.trim()});
+        options.onError(errorBuffer.trim());
       }
     })
   })
@@ -132,10 +133,20 @@ function run (options){
 exports.runFile = runFile
 function runFile (file,options) {
 req = options.adapter || 'async_testing/lib/asynct_adapter'
-//delete options.adapter
   run({ require: req
       , function: 'runTest'
-      , args: [file, options] } )
+      , args: [file, options]  
+      , onError: errorToSuiteDone })
+      
+ function errorToSuiteDone(error){
+  options.onSuiteDone && options.onSuiteDone('loadError', 
+  { suite: file
+  , filename: file
+  , status: 'loadError'
+  , error: error
+  
+  })
+ }
 }
 
 function eachKey(obj,func){
@@ -149,29 +160,19 @@ function makeMessage(callbacks,path){
   path = path || []
   var message = (callbacks instanceof Array) ? [] : {} 
   
-  // Aha!. if you don't have var, and you call recursively all calls get same var.
-//  for(i in callbacks){
   eachKey(callbacks,function(cb,i){
-//    log("get cb:" + i)
     if(({object: 1, function:1})[typeof cb]) {
       if('function' === typeof cb) {
         message[i] = 
           {'[Function]': [].concat(path).concat([i])}
-           //an extended get that takes the whole path?
-  //      log("message[" + i + "] == " + inspect(message[i]))
       } else {
-    //    log('recursive call makeMessage >>> @ \'' + i + "'")
         var m =  makeMessage(cb,[].concat(path).concat([i]))
-      //  log('<<<returned call makeMessage:' + inspect(m))
         message[i] = m
-        
-        //log("message['" + i + "'] == " + inspect(message[i]))
       }
     } else {
       
       message[i] = cb
     }
-//  log("message[" + i + "] == " + message[i])
   })
   log("returning :", inspect(message))
   return message  
@@ -186,9 +187,7 @@ function makeCallbacks(message,sender){
     (function (j){
       var path = message[i]['[Function]']
       if(path){
-//        console.log("call function " + j + " at :" + inspect(path))
         callbacks[j] = function (){
-  //        console.log("call function " + j + " () at :" + inspect(path))
           args = []
           for(i in arguments){
             args[i] = arguments[i]
