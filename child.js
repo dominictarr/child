@@ -39,14 +39,14 @@ if (module == require.main) {
     xportSender.send([id,message])
   }
   
-  if(payload.onExit){
+//  if(payload.onExit){
     log('will send exit')
     process.on('exit',function (a,b){
       log('EXIT!')
       console.error("SOFTEXIT")
-      payload.onExit(a,b)
+  //    payload.onExit(a,b)
       }) /* so we know when the process hasn't fatal errored*/
-  }
+  //}
   adapter = require(payload.require)
 
   var it = describe(adapter, "module loaded in child process")
@@ -64,21 +64,12 @@ exports.run = run
 function run (options){
   var wasSoftExit = false
     , errorBuffer = ''
-/*  oldOnExit = options.onExit
-  options.onExit = function (status,report){
-    log('child process exit')
-    log("STOP!!!!")
-
-    normalExit = true;
-    oldOnExit && oldOnExit(status,report)
-  }*/
+    , timer
+    , timedout = false
   
-  function softExit(status,report){
+  /*function softExit(status,report){
     wasSoftExit = true;
-  }
-  function hardExit(status,report){
-    if(!wasSoftExit){
-      
+  }*/
      /*
      heh, I don't think my tcp was getting flushed before exiting,
      then i came up with this elegant hack.
@@ -88,14 +79,18 @@ function run (options){
      
      of course, this breaks when the change behaviour in later node versions.
      */
+  function hardExit(status,report){
 
      if(/SOFTEXIT$/.exec(errorBuffer.trim())){
-      log("ignoring stderr. >" + errorBuffer.trim() + "<")
+//      log("ignoring stderr. >" + errorBuffer.trim() + "<")
+     } else if (timedout){
+//      log("TIMEOUT after " + options.timeout + " ms!")
+      options.onTimeout && options.onTimeout("TIMEOUT");
      } else {
       log("HARD EXIT. >" + errorBuffer.trim() + "<")
       options.onError && options.onError(errorBuffer.trim());
      }
-    }
+//    }
     xportR.stop()
     options.onExit && options.onExit()
   }
@@ -107,7 +102,7 @@ function run (options){
     { args: options.args || [] 
     , require: options.require
     , function: options.function
-    , onExit : softExit //options.onExit 
+   // , onExit : softExit //options.onExit 
     , onReturn: options.onReturn
     , transport: xportR.descriptor  }
 
@@ -117,6 +112,7 @@ function run (options){
   var json = xmitR.stringify(payload)
   xportR.recieve = 
     function (args){
+      log(args)
       xmitR.recieve(args[0],args[1])
     }
   
@@ -124,13 +120,18 @@ function run (options){
     spawn('node' 
       , [ __filename , json ] )
 
+  if(options.timeout)
+    timer = setTimeout(timeout,options.timeout)
+  function timeout(){
+    timedout = true
+    child.kill()
+  }
 
-  //child.on('exit', hardExit)
   
   child.stdout.on('data', stdout)
 
   function stdout(data) {
-    log('',style(data.toString()).yellow )
+    log('' + style(data.toString()).yellow )
   }
 
   child.stderr.on('data', stderr);
@@ -141,42 +142,6 @@ function run (options){
   }
 
   child.stderr.on('close', hardExit)
-
-  function close() {
-    if (errorBuffer && options.onError && !normalExit) {
-      xportR.stop()
-      
-      /**
-       * ok, got a bug here. if the reciever gets started but does not recieve anything listens forever.
-       * the problem is in the transport layer
-       * i swept the starting and stopping under the rug. 
-       * if i continue going in this direction, i'd make the transport close down if there is radio
-       * silence.
-       * clearly, that is not right.
-       * I have to add stopping to transport API
-       */
-
-      options.onError(errorBuffer.trim());
-
-      /**
-       * Ensure that onExit is called after onExit
-       *
-       * this is a work around, because node does not call process.on('exit',...)
-       * in some cases (such as Syntax Error)
-       * it's therefore necessary to 'parse' out the error by sending exit even back,
-       * so we know it's been a propper error.
-       * if it's a fatal error, then read that from the stacktrace.
-       
-       hmm. what if i reorganised this as soft exit
-       and hard exit? soft exit means ok
-       hard exit means fatal error: read stderr.
-       
-       i'm not using a child.on('exit',...) at the moment, because sometime it comes after
-
-       */
-
-     // options.onExit && options.onExit()
-    }
-  }
+//  child.on('exit',hardExit)
 }
 

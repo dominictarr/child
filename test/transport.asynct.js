@@ -1,26 +1,18 @@
 //transport.asynct.js
 
 /*
-
-  okay, I have two modules which pass this test.
-
-  I suspect that i've gone a little far in incorperating
-  the startup and closing into the same modules.
+  more complications, problem is flushing at end of process.
   
-  that kinda wants to be seperated. 
+  need to use STDIO to get the last message through, 
+  but i've kinda boxed myself in wih this test
+  because i've made it so that it doesn't matter whether your in the same
+  process or not. but using STDIO it does matter.
   
-  on start, it polls until it makes a connection,
-  then it queues messages to give a more linear interface.
   
-  then when it's finished it closes again.
-  
-  this is exactly what I need for running tests.
-  
-  ---okay, now plug this back into the other child stuff?
 */
 
-var format = 'child/transport' //tcp
-//var format = 'child/dgram-transport' // datagrams
+//var format = 'child/transport' //tcp
+var format = 'child/dgram-transport' // datagrams
 var transport = require (format)
 //var transport = require ('child/dgram-transport')
   , describe  = require ('should').describe

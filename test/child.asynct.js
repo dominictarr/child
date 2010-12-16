@@ -1,7 +1,8 @@
-var child = require('child/child')
+var child = require('child/child_stdio')
+//var child = require('child/child')
   , inspect = require('inspect')
   , describe = require('should').describe
-
+  , log = require('logger')
 /*
 
 now that this is rewritten I feel much more confidant.
@@ -146,3 +147,33 @@ exports ['stops normally after a delayed error'] = function (test){
 }
 
 /**/
+
+exports ['can set a timeout for the the child to live'] = function (test){
+
+    var timer = setTimeout(assertTimeout,2000)
+      , timeoutCalled = false
+  child.run(
+    { require: 'child/test/lib/hang'
+    , function: 'hang'
+    , args: []
+    , onError: error
+    , onExit: exit 
+    , onTimeout: timeout
+    , timeout: 1000 } )
+    
+    function exit(){
+      test.ok(timeoutCalled,'onTimeout callback should get called')
+      test.finish()
+    }
+    function error(err){
+      test.ifError(err)
+      throw err
+    }
+    function timeout(time){
+      timeoutCalled = true
+      clearTimeout(timer)
+    }
+    function assertTimeout(){
+      test.ok(false,"expected child to be stopped within 1000 ms")
+    }
+}

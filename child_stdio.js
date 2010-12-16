@@ -9,9 +9,9 @@ var messages = require('./messages2')
   , inspect = require('inspect')    
   , util = require('util')
   , log = console.log
-//  , testing = require('./testing')    
 
 if (module == require.main) {
+  log("CHILD VIA STDIO")
 
   process.ARGV.shift()//node
   process.ARGV.shift()//__filename
@@ -37,7 +37,10 @@ if (module == require.main) {
     , payload = makeCallbacks(opts.payload,send)
 //    log("PAYLOAD:" + inspect(opts.payload))
 
-  process.on('exit',payload.onExit)
+//  process.on('exit',payload.onExit)
+  process.on('exit',function (){
+    console.error("SOFTEXIT")
+  })
 
   function send(message){
     log(messager.messageEncode(message))
@@ -64,14 +67,26 @@ spawn = require('child_process').spawn
 
 exports.run = run
 function run (options){
-  var normalExit = false;
-  oldOnExit = options.onExit
-  options.onExit = function (status,report){
-    normalExit = true;
-    log("NOERMAL EXIT NOERMAL EXIT NOERMAL EXIT")
-    oldOnExit && oldOnExit(status,report)
+  var normalExit = false
+    //, oldOnExit = options.onExit
+    , timer
+    , timedout = false
+    , exited = false
+    , errorBuffer = ''
+
+  function childExit(status,report){
+      log("child EXIT. >" + errorBuffer.trim() + "<")
+     if(/SOFTEXIT$/.exec(errorBuffer.trim())){
+     } else if (timedout){
+      options.onTimeout && options.onTimeout("TIMEOUT");
+     } else {
+      log("HARD EXIT. >" + errorBuffer.trim() + "<")
+      options.onError && options.onError(errorBuffer.trim());
+     }
+
+      log("EXIT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! >" + errorBuffer.trim() + "<")
+     options.onExit && options.onExit()
   }
-  
 
   magic = messages.magicNumbers
   child = 
@@ -85,8 +100,17 @@ function run (options){
           , payload: makeMessage(
             { args: options.args || [] 
             , onReturn: options.onReturn
-            , onExit : options.onExit 
               } ) } ) ] )
+
+  child.on('exit',childExit)
+
+  if(options.timeout)
+    timer = setTimeout(timeout,options.timeout)
+
+  function timeout(){
+    timedout = true
+    child.kill()
+  }
 
   var buffer = ''
     , messager = messages.useMagicNumbers(magic.start,magic.end)
@@ -95,10 +119,9 @@ function run (options){
 
     var lines = data.split('\n');
 
+    log(data)
     lines[0] = buffer + lines[0];
     buffer = lines.pop();
-
-    log(">\t"+data)
 
     lines = messager.messageDecode(lines);
 
@@ -107,35 +130,19 @@ function run (options){
         parseMessage(message,options)
     })
   })
-    var errorBuffer = '';
   child.stderr.on('data', function(data) {
     errorBuffer += data.toString();
-    log("!" + data)
   });
 
-/*
-  always ensure that normal exit has happened?
-  stall on suite done untill exit registered?
-
-*/
-  child.stderr.on('close', function() {
-    process.nextTick(function (){
-    
-      if (errorBuffer && options.onError && !normalExit) {
-        console.log("LOAD ERROR LOAD ERROR LOAD ERROR")
-        console.log(errorBuffer.trim())
-        options.onError(errorBuffer.trim());
-      }
-    })
-  })
 }
 
 exports.runFile = runFile
 function runFile (file,options) {
-req = options.adapter || 'async_testing/lib/asynct_adapter'
+  var req = options.adapter || 'async_testing/lib/asynct_adapter'
+
   run({ require: req
       , function: 'runTest'
-      , args: [file, options]  
+      , args: [file, options]
       , onError: errorToSuiteDone })
       
  function errorToSuiteDone(error){
@@ -185,7 +192,9 @@ function makeCallbacks(message,sender){
 
   for(i in message){
     (function (j){
-      var path = message[i]['[Function]']
+      var path
+      if (message[j])
+        path = message[j]['[Function]']
       if(path){
         callbacks[j] = function (){
           args = []
