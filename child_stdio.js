@@ -181,7 +181,7 @@ function makeMessage(callbacks,path){
       message[i] = cb
     }
   })
-  log("returning :", inspect(message))
+//  log("returning :", inspect(message))
   return message  
 }
 
@@ -215,7 +215,7 @@ function makeCallbacks(message,sender){
 
 exports.parseMessage = parseMessage
 function parseMessage (message,callbacks){
-  console.log('call [' + message[0].join(',') + '](' + message[1].join(',') + ')')
+//  console.log('call [' + message[0].join(',') + '](' + message[1].join(',') + ')')
   var cb = callbacks
   message[0].forEach(function (key){
     cb = cb[key]

@@ -18,6 +18,7 @@ var transport = require (format)
   , describe  = require ('should').describe
   , curry = require('curry')
   , inspect = require('inspect')
+
 function randomList(n){
   var l = []
   for (var i = 0 ; i < n ; i ++ ) {
@@ -54,6 +55,7 @@ function recieveMessages(messages,recieved,test,done){
         messages.should.eql(recieved)
         if(done){
           return done()
+          
           }
         test.finish()
       }

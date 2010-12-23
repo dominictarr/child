@@ -2,9 +2,11 @@
 //sendAndRecieve
 
 var  assert = require('assert')
-
+  , inspect = require('inspect')
 exports.Reciever = Reciever
 exports.Sender = Sender
+
+var number = 0 //number of instances of Receiver in this process.
 
 function Clean(){
   this.__proto__ = null
@@ -37,6 +39,8 @@ function toArray(obj){
 }
 
 function Reciever (){
+  var instance = number ++
+  if(!(this instanceof Reciever)) return new Reciever
   var registry = new Hash()
     , self = this  
   self.register = function(func) {
@@ -46,15 +50,36 @@ function Reciever (){
     if(key) {
       return key
     } else {
-      key = Math.round(Math.random()*10000000000000)
+      key = ('' 
+        + (func.name || 'function') 
+        + Math.round(Math.random()*1000000)) 
+        + ':' + process.pid 
+        + ':' + instance
       registry[key] = func
-     // console.log(registry.keyOf(func),key)
-      return 1 * key
+      
+      //console.log(registry.keyOf(func),key)
+      return key
     }
   }
   self.recieve = function (id,args){
-    assert.ok(registry[id],'registry did not have id=' + id)
-    
+  /*
+  WEIRD PROBLEM. getting calls  not registered here.
+  from the layer below?
+  no. adding info into the key.
+  wrong messages are from different instances but have same pid.
+
+  accidental global var causing leak?
+  
+  YES! it was the xmitR var in child/child_stdout2
+  */
+  
+   assert.ok(registry[id],'registry did not have id=' + id 
+     + "\nexpected one of " + Object.keys(registry)
+     + "\nargs were:" + inspect(args) )
+    if(!registry[id])
+      return console.log('registry did not have id=' + id 
+        + "\nexpected one of " + Object.keys(registry))
+ 
     registry[id].apply(null,args)
   }
   
@@ -71,6 +96,8 @@ function Reciever (){
 }
 
 function Sender (){
+  if(!(this instanceof Sender)) return new Sender
+
   var registry = new Hash()
     , self = this
   self.registered = function (id){

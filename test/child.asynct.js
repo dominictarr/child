@@ -1,15 +1,17 @@
-var child = require('child/child_stdio')
+var child = require('child/child_stdout2')
+//var child = require('child/child_stdio')
 //var child = require('child/child')
   , inspect = require('inspect')
   , describe = require('should').describe
   , log = require('logger')
+  , helper = require('async_helper')
 /*
 
 now that this is rewritten I feel much more confidant.
 
 */
 
-exports ['can load an run an arbitary function'] = function (test){
+exports ['can load and run an arbitary function'] = function (test){
 
   var rand = Math.random()
   child.run(
@@ -25,6 +27,20 @@ exports ['can load an run an arbitary function'] = function (test){
     test.finish()
   }
 }
+
+exports ['does not call anything if .function undefined'] = function (test){
+
+  var rand = Math.random()
+    , isCalled = helper.callChecker(1000,test.finish)
+  child.run(
+    { require: 'child/test/lib/callback'
+    , args: [rand]
+    , onReturn: isCalled(function returned (){}).times(0)
+    , onError: isCalled(function error (){}).times(0)
+    , onExit: isCalled(function exit (){})
+     } )
+}
+
 
 /*
   throw an error
@@ -73,6 +89,7 @@ exports ['calls callbacks'] = function (test){
   
   function each(fName){
     callbacks[fName] = function (status,data){
+      log('CALLBACK:',status,data) 
       thisCall = calls.shift()
       test.equal(thisCall,fName)
       test.equal(status,fName)
@@ -94,7 +111,9 @@ exports ['calls callbacks'] = function (test){
   }
   
   function exit(){
-    test.equal(calls.length,0)
+    log('DUMMY TEST ADAPTER EXIT')
+    log('calls was:',calls)
+    test.equal(calls.length,0,"expected calls.length == 0, calls was:" + inspect(calls))
     test.finish()
   }
 }
@@ -146,7 +165,6 @@ exports ['stops normally after a delayed error'] = function (test){
   }
 }
 
-/**/
 
 exports ['can set a timeout for the the child to live'] = function (test){
 
@@ -177,3 +195,4 @@ exports ['can set a timeout for the the child to live'] = function (test){
       test.ok(false,"expected child to be stopped within 1000 ms")
     }
 }
+/**/

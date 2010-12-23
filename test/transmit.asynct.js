@@ -11,7 +11,7 @@ exports ['Reciever can register a function'] = function(test){
   r = new Reciever()
   id = r.register(x)
   describe(id,'ID of registered function').should.ok
-  id.should.be.a('number')
+  id.should.be.a('string')
   id.should.eql(r.register(x)) //same function can't be registered twice
 
   should.throws(function (){
