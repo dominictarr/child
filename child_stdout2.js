@@ -148,8 +148,8 @@ function run (options){
   
   child.stdout.on('data', stdout)
 
-  xportR.noise = function (n){
-//    log('>' + style(n.toString()).yellow.to_s + '<')
+  xportR.noise = function (noise){
+    process.stdout.write(style(noise.toString()).yellow.to_s)
   }
   function stdout(data) {
 //    process.stdout.write(style(data.toString()).yellow.to_s)
