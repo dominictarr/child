@@ -5,14 +5,14 @@ var st = require('child/stdio-transport')
   , EventEmitter = require('events').EventEmitter
   , equals = require('traverser/equals')
 
-Pipe.prototype = EventEmitter.prototype
+Pipe.prototype = new EventEmitter()
 function Pipe (){
   this.write = function (data){
     this.emit('data',data)
   }
 }
 
-NoisyPipe.prototype = EventEmitter.prototype
+NoisyPipe.prototype = new EventEmitter()
 function NoisyPipe (){
   this.write = function (data){
     this.emit('data','asdfj\nlasdjf\n')
@@ -21,8 +21,8 @@ function NoisyPipe (){
     this.emit('data','sdfasdbad\n' + Math.random())
   }
 }
-NoisyChunkyPipe.prototype = EventEmitter.prototype
-function NoisyChunkyPipe (){
+ChunkyPipe.prototype = new EventEmitter()
+function ChunkyPipe (){
   this.write = function (data){
     var j = 0
     this.emit('data','asdfjlasdjf\n')
@@ -33,20 +33,10 @@ function NoisyChunkyPipe (){
     this.emit('data','dsf' + Math.random())
   }
 }
-ChunkyPipe.prototype = EventEmitter.prototype
-function ChunkyPipe (){
-  this.write = function (data){
-    var j = 0
-    for(var i = 1; i <= data.length; i += 1){
-      this.emit('data',data.slice(j,i))
-      j = i
-    }
-  }
-}
 /*what if there is more than one message in a chunk?
 */
-NoisyLumpyPipe.prototype = EventEmitter.prototype
-function NoisyLumpyPipe (){
+LumpyPipe.prototype = new EventEmitter()
+function LumpyPipe (){
   var toSend = ''
     , willWrite = false
     , self = this
@@ -60,10 +50,9 @@ function NoisyLumpyPipe (){
     willWrite = true
 
     process.nextTick(function (){
-      var s = toSend
+      self.emit('data',toSend)
       toSend = ''
       willWrite = false
-      self.emit('data',s)
     })
   }
 }
@@ -73,6 +62,8 @@ function checkMessages(test,pipe,messages,done){
     , s = new st.Sender(d)
     , i = 0
 
+  log(d)
+    
   r.recieve = check
 
   messages.forEach(function (message){
@@ -80,7 +71,7 @@ function checkMessages(test,pipe,messages,done){
   });
   
   function check(data){
-    log("CHECK DATA:", data)
+    log("CHEK DATA:",data)
     test.equal(data,messages[i++])
     if(i == messages.length)
       done()
@@ -98,6 +89,7 @@ exports['can send messages'] = function (test){
     s.send(message)
     
     function check(data){
+      log(data)
       test.equal(data,message)
 
       test.finish()
@@ -112,27 +104,30 @@ var messages =
       , 'ydydydyd' ]
 
 exports['can multiple messages'] = function (test){
+//  throw new Error()
   checkMessages(test,new Pipe(),messages,test.finish)
 }
 exports['can handle noisy pipe'] = function (test){
   checkMessages(test,new NoisyPipe(),messages,test.finish)
 }
+
 exports['can handle chunked pipe'] = function (test){
-  checkMessages(test,new NoisyChunkyPipe(),messages,test.finish)
+  checkMessages(test,new ChunkyPipe(),messages,test.finish)
 }
 
 exports['can handle lumpy pipe'] = function (test){
-  checkMessages(test,new NoisyLumpyPipe(),messages,test.finish)
+  checkMessages(test,new LumpyPipe(),messages,test.finish)
 }
 
 /**/
-function checkNoise(test,pipe,message,noises,done){
-  var d = {pipe: pipe}
+exports['pipe is not obstructed - noise gets through coherently'] = function (test){
+  var pipe = new Pipe()
+    , d = {pipe: pipe}
     , r = new st.Reciever(d)
     , s = new st.Sender(d)
-    , noiseIn = noises.join('')
+    , message = "**()&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&?"
+    , noiseIn = 'noise1noise2'
     , noiseOut = ''
-
   r.recieve = check
 
   r.noise = function (n){
@@ -140,11 +135,11 @@ function checkNoise(test,pipe,message,noises,done){
     noiseOut += n 
 //    test.finish()
   }
-  pipe.write(noises.shift())
+  pipe.write("noise1")
   s.send(message)
-  pipe.write(noises.shift())
+  pipe.write("noise2")
   s.send(message)
-
+   
   function check(data){
     test.equal(data,message)
   }
@@ -152,17 +147,7 @@ function checkNoise(test,pipe,message,noises,done){
   
   function c (){
     test.equal(noiseOut,noiseIn)
-    done()
-  }
-
-}
-
-exports['pipe is not obstructed - noise gets through coherently'] = function (test){
-  var message = "**()&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&?"
-
-  checkNoise(test,new Pipe(),message,['noise1','noise2'],c)
-  function c(){
-    checkNoise(test,new ChunkyPipe(),message,['noise1\nY','noise\n2X'],test.finish)
+    test.finish()
   }
 }
 
