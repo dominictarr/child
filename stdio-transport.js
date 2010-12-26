@@ -30,18 +30,21 @@ function Reciever(desc,ready){
   desc.end = '-' + Math.round(Math.random() * 100000000) + '">'
   self.pipe = desc.pipe
   
-  var x = new RegExp('(.*?)' + desc.start + '(.*?)' + desc.end)
+  //when creating a regex with the constructor, you must escape escape characters
+  var x = new RegExp('^([\\s\\S]*?)' + desc.start + '(.*?)' + desc.end,'m')
   var soFar = ''
   
   self.pipe.on('data',parseMessage)
 
-  function parseMessage (data){
+  function parseMessage (data) {
     soFar += data
     var m = x.exec (soFar)
-    if(m){
-      self.recieve(parse(m[2]))
+    if(m) {
+
       self.noise(m[1])//just the preceding noise
-      soFar = soFar.replace(x,'')
+      soFar = soFar.replace(m[0],'')
+      self.recieve(parse(m[2]))
+
   /*
   if a match was found, call parseMessage again with empty input.
   
@@ -54,15 +57,14 @@ function Reciever(desc,ready){
   
    ... a valuable lesson for cheap ...
   */
-   parseMessage('')
-
-    } 
+      parseMessage('')
+    }
   }
   self.recieve = function (message){
   //  log("recieved message:" + message)
   }
   self.noise = function (noise){
-  //  log("noise:>>>" + JSON.stringify(noise) + "<<<")
+//    log("noise:>>>" + JSON.stringify(noise) + "<<<")
   }
 }
 
