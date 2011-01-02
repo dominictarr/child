@@ -3,8 +3,8 @@
 //var messages = require('./messages2')
   var log = require('logger')
     , EventEmitter = require('events').EventEmitter
-    , stringify = require('traverser/untangle').stringify
-    , parse = require('traverser/untangle').parse
+    , stringify = require('traverser/untangle2').stringify
+    , parse = require('traverser/untangle2').parse
 /*    , stringify = JSON.stringify
     , parse = JSON.parse*/
 

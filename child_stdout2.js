@@ -21,6 +21,7 @@ var xmit = require('./transmit')
   , xport = require('./stdio-transport')
   , style = require('style')
   , log = console.log
+  , render = require('render/render2')
 
 var describe = require('should').describe
 if (module == require.main) {
@@ -44,7 +45,7 @@ if (module == require.main) {
   var Remapper = require('remap/remapper')
     , r = new Remapper(module,payload.remap)
 //    var r = {require: require}  
-    log(payload.remap)
+//    log(payload.remap)
 
   var transport = xport
 
